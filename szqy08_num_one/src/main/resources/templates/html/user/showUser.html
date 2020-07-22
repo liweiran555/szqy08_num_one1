@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>用户列表</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="/layui/css/layui.css" media="all">
+    <script src="/layui/layui.js"></script>
+</head>
+<body>
+<div class="layui-fluid">
+<!--多条件查询-->
+<div class="layui-card">
+<form class="layui-form">
+    <div class="layui-form-item">
+        <div class="layui-inline">
+            <label class="layui-form-label">登录名</label>
+            <div class="layui-input-inline">
+                <input type="text" name="searchLoginName" id="searchLoginName" placeholder="登录名" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-inline">
+            <label class="layui-form-label">用户名</label>
+            <div class="layui-input-inline">
+                <input type="text" name="searchUserName" id="searchUserName" placeholder="用户名" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-inline">
+            <label class="layui-form-label">手机号</label>
+            <div class="layui-input-inline">
+                <input type="text" name="searchPhoneNumber" id="searchPhoneNumber" placeholder="手机号" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-inline">
+            <div class="layui-input-inline">
+                <button type="submit" class="layui-btn" lay-submit="search_submit" lay-filter="search_filter">立即提交</button>
+                <button class="layui-btn layui-btn-primary" id="search_reset">重置</button>
+            </div>
+        </div>
+    </div>
+</form>
+</div>
+</div>
+<!--table-->
+<table class="layui-hide" id="demo" lay-filter="test"></table>
+<!--行工具-->
+<script type="text/html" id="barDemo">
+    <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+</script>
+<!--头工具-->
+<script type="text/html" id="toolbarDemo">
+    <div class="layui-btn-container">
+        <button class="layui-btn layui-btn-sm" lay-event="addDept">添加</button>
+        <button class="layui-btn layui-btn-danger layui-btn-sm" lay-event="deleteBatch">删除</button>
+    </div>
+</script>
+<script>
+    //JavaScript代码区域
+    layui.use(['element','table'], function(){
+        var element = layui.element;
+        var table = layui.table;
+        var $ = layui.jquery;
+        var form = layui.form;
+        //执行一个 table 实例
+        var myTable = table.render({
+            elem: '#demo'
+            ,id:'tableReload' // 重载数据表格
+            ,height: 420
+            ,url: '/user/selectAllUser' //数据接口
+            ,page: true //开启分页
+            ,limit: 5 // 默认一页显示5条数据
+            ,limits: [5, 10, 15, 20, 50, 100]
+            ,toolbar: '#toolbarDemo' //开启工具栏，此处显示默认图标，可以自定义模板，详见文档
+            ,cols: [
+                [ //表头
+                 {field: 'userId', title: '用户编号', sort: true, fixed: 'left', type:'checkbox'}
+                ,{field: 'userId', title: '编号', sort: true}
+                ,{field: 'loginName', title: '登录名'}
+                ,{field: 'userName', title: '真实姓名'}
+                ,{field: 'phonenumber', title: '手机号'}
+                ,{
+                field: 'sex', title: '性别',
+                templet:function (d) {
+                    if (d.sex == 0){
+                        return "男";
+                    }else{
+                        return "女";
+                    }
+                }
+                }
+                ,{
+                field: 'status', title: '状态',
+                templet:function (d) {
+                    if (d.status == 0){
+                        return '<button type="button" class="layui-btn layui-btn-xs ">正常</button>'
+                    }else {
+                        return '<button type="button" class="layui-btn layui-btn-xs layui-btn-danger">禁用</button>'
+                    }
+                }
+                }
+                ,{
+                field: 'deptName', title: '部门名称',
+                    templet:function (d) {
+                        return d.dept.deptName
+                    }
+                }
+                ,{field: 'createTime', title: '创建时间', width: 200,
+                    templet:"<div>{{layui.util.toDateString(d.createTime,'yyyy-MM-dd HH:mm:ss')}}</div>"
+                }
+                ,{field: 'updateBy', title: '修改人', hide: true}
+                ,{field: 'updateTime', title: '修改时间', hide: true}
+                ,{field: 'remark', title: '备注', hide: true}
+                ,{title: '操作', toolbar: '#barDemo'}
+            ]]
+        });
+        table.on('tool(test)', function(obj){ //注：tool 是工具条事件名，test 是 table 原始容器的属性 lay-filter="对应的值"
+            var data = obj.data; //获得当前行数据
+            var layEvent = obj.event; //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
+            var tr = obj.tr; //获得当前行 tr 的 DOM 对象（如果有的话）
+
+            if(layEvent === 'detail'){ //查看
+                //do somehing
+            } else if(layEvent === 'del'){ //删除
+                layer.confirm('真的删除行么', function(index){
+                    obj.del(); //删除对应行（tr）的DOM结构，并更新缓存
+                    layer.close(index);
+                    //向服务端发送删除指令
+                });
+            } else if(layEvent === 'edit'){ //编辑
+                //do something
+
+                //同步更新缓存对应的值
+                obj.update({
+                    username: '123'
+                    ,title: 'xxx'
+                });
+            } else if(layEvent === 'LAYTABLE_TIPS'){
+                layer.alert('Hi，头部工具栏扩展的右侧图标。');
+            }
+        });
+        table.on('toolbar(test)', function(obj){
+            var checkStatus = table.checkStatus(obj.config.id)
+                ,data = checkStatus.data; //获取选中的数据
+            switch(obj.event){
+                case 'addDept':
+                    layer.msg('添加');
+                    break;
+                case 'deleteBatch':
+                    if(data.length === 0){
+                        layer.msg('请选择一行');
+                    } else {
+                        // 批量删除确认
+                        layer.confirm('确定要删除这:'+data.length+'条数据吗?',function () {
+                            // 请求后台批量删除接口
+                            $.ajax({
+                                url:'/user/deleteBatchDept',
+                                dataType:'json',
+                                contentType:"application/json;charset=UTF-8",
+                                type:'POST',
+                                data:JSON.stringify(data),
+                                success: function (result) {
+                                    layer.closeAll();// 关闭对话框
+                                    layer.msg(result.msg);
+                                    myTable.reload();// 重新加载表格数据
+                                }
+                            })
+                        })
+                    }
+                    break;
+            };
+        });
+        form.on('submit(search_filter)',function (data) {
+            var formData = data.field;
+            var searchLoginName = formData.searchLoginName;
+            var searchUserName = formData.searchUserName;
+            var searchPhoneNumber = formData.searchPhoneNumber;
+
+            // 数据表格重载
+            table.reload('tableReload',{
+                page:{
+                    curr: 1 // 从第一页开始
+                }
+                , where: { // 传参到后台
+                    searchLoginName: searchLoginName,
+                    searchUserName: searchUserName,
+                    searchPhoneNumber: searchPhoneNumber
+                }
+            });
+            return false;
+        });
+        $('#search_reset').click(function () {
+//            $("#searchLoginName").val("");
+//            $("#searchUserName").val("");
+//            $("#searchPhoneNumber").val("");
+            myTable.reload();
+        })
+    });
+</script>
+</body>
+</html>
